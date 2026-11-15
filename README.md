@@ -1,66 +1,104 @@
 <p align="center">
-  <img src="assets/app-icon.png" alt="ZMK Statbar icon" width="256" />
+  <img src="assets/app-icon.png" alt="ZMK Statbar icon" width="200" />
 </p>
 
-# ZMK Statbar
+<h1 align="center">ZMK Statbar</h1>
 
-A macOS menu bar app for ZMK keyboards: the active layer, the battery of each
-half, and the link between the halves, at a glance.
+<p align="center">
+  Your ZMK keyboard's layer, batteries and split link, in the macOS menu bar.
+</p>
 
-ZMK Statbar is a fork of [ZMK Battery Bar](https://github.com/itouuuuuuuuu/zmk-battery-bar)
-by Masafumi ITO, whose app does all of the Bluetooth and battery work underneath.
-If battery levels are all you need, use the original. The layer display was also
-offered upstream in [#84](https://github.com/itouuuuuuuuu/zmk-battery-bar/pull/84).
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-14%2B-blue" alt="macOS 14+" />
+  <img src="https://img.shields.io/badge/Swift-6.0-orange" alt="Swift 6.0" />
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT" />
+</p>
 
-![Screenshot](assets/screenshot.png)
+ZMK Statbar shows what your keyboard is doing without you having to guess: which
+layer you are on, which layers are locked on, how much battery each half has,
+and whether the halves are still talking to each other. It can also keep a
+floating diagram of your current layer on screen while you learn a new layout.
 
-![macOS 14+](https://img.shields.io/badge/macOS-14%2B-blue)
-![Swift 6.0](https://img.shields.io/badge/Swift-6.0-orange)
-![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+It is a fork of [ZMK Battery Bar](https://github.com/itouuuuuuuuu/zmk-battery-bar)
+by Masafumi ITO, whose app does the Bluetooth and battery work underneath. If
+battery levels are all you need, use the original.
 
+<!-- TODO: add a screenshot of the menu bar and panel here -->
 
-## Layer display
+## What it shows
 
-Keyboards running the [zmk-host-status](https://github.com/johncattrall/zmk-host-status)
-ZMK module also get, next to the batteries:
+**In the menu bar**
 
-- the active layer name in the menu bar, with a lock symbol when it is toggled on;
-- badges for other locked layers underneath (e.g. an alternate alpha layer while
-  a function layer is held on top of it);
-- a warning symbol when a split half is not linked to the central half;
-- the firmware build id in the panel, to confirm which build is actually flashed.
+- The active layer's name, with a lock symbol when the layer is toggled on
+  rather than held.
+- Badges for other locked layers underneath, so an alternate alpha layer stays
+  visible while you hold a function layer on top of it.
+- A warning symbol when a split half has lost its link to the other half.
+- Caps Lock, held modifiers (optional) and a `USB` badge when the keyboard is
+  sending over USB instead of Bluetooth.
+- The battery level of each half, as in ZMK Battery Bar.
 
-Layers named in "Hidden layers" (default: `Mouse`) are never shown, so an
-auto-mouse layer raised by trackball motion does not make the indicator flicker.
-Keyboards without the module are unaffected and show batteries only.
+**In the panel** (click the menu bar item)
 
-To set it up, add the module to your zmk-config's `config/west.yml`, reflash the
-central half (the right half on most splits), then remove the keyboard in System
-Settings, Bluetooth, and pair it again so macOS picks up the new service.
+- Layer, locked layers, split link, output (USB or Bluetooth profile number)
+  and the firmware build, which confirms exactly which build is flashed.
+- Battery details and all settings.
 
-## Features
+**Cheat sheet**
 
-- **Two-line status bar display**: Shows Central (C) and Peripheral (P) battery levels with custom-drawn battery icons
-- **BLE Battery Service**: Reads battery levels via standard BLE Battery Service (0x180F) with notification subscription
-- **Auto Central/Peripheral detection**: Uses BLE descriptor (User Description) to identify each half of the split keyboard
-- **Multiple keyboard support**: Register and switch between multiple ZMK keyboards
-- **Customizable side labels**: Override the default `C` / `P` menu bar labels with `L` / `R` per keyboard to match your physical left/right layout
-- **Single line layout**: Optionally show both battery levels on one line (e.g. `C50% P50%`)
-- **Hide battery icon**: Optionally hide the battery icons and show only the labels and percentages
-- **Swap battery positions**: Optionally swap the order of the two battery rows in the menu bar
-- **Auto-reconnect**: Automatically reconnects with exponential backoff when the keyboard disconnects
-- **Auto-switch to the active keyboard**: Optionally follow whichever saved keyboard you are typing on (requires the Input Monitoring permission; only the source device of each key press is read, never the keys themselves)
-- **Launch at Login**: Optional auto-start via SMAppService
+- A floating window with the keymap diagram of your current layer, following
+  you as you switch layers. Uses the SVGs that
+  [keymap-drawer](https://github.com/caksoylar/keymap-drawer) generates.
+
+**Alerts**
+
+- A notification when either half drops to a battery threshold you choose.
+
+Battery levels and Caps Lock work with any ZMK keyboard. Everything about
+layers, the split link, modifiers and output needs the small firmware module
+described below.
 
 ## Requirements
 
 - macOS 14 (Sonoma) or later
-- A ZMK-powered split keyboard with BLE Battery Service enabled
+- A ZMK keyboard connected to the Mac over Bluetooth
+- For layer features: the [zmk-host-status](https://github.com/johncattrall/zmk-host-status)
+  module in your firmware
 
-## Install
+## Setup
 
-There is no prebuilt release yet. Build from source (requires Xcode or the Xcode
-command line tools):
+### 1. Firmware
+
+Add the module to your zmk-config's `config/west.yml`:
+
+```yaml
+manifest:
+  remotes:
+    - name: johncattrall
+      url-base: https://github.com/johncattrall
+  projects:
+    - name: zmk-host-status
+      remote: johncattrall
+      revision: main
+```
+
+For both halves' batteries on a split, also add this to the central half's
+`.conf` file (the right half on most splits):
+
+```ini
+CONFIG_ZMK_BATTERY_REPORTING=y
+CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_PROXY=y
+CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING=y
+```
+
+Rebuild and flash the central half. Then remove the keyboard in System
+Settings, Bluetooth, and pair it again. macOS caches the list of services a
+keyboard offers, and the new one stays invisible until you re-pair.
+
+### 2. App
+
+There is no prebuilt release yet, so build from source. You need Xcode or the
+Xcode command line tools.
 
 ```sh
 git clone https://github.com/johncattrall/zmk-statbar
@@ -69,107 +107,104 @@ cd zmk-statbar
 cp -r "build/ZMK Statbar.app" /Applications/
 ```
 
-## Usage
+### 3. First launch
 
-1. Launch ZMK Statbar: it appears in the menu bar with `C` and `P` battery levels
-2. Click the status bar item to open the popover
-3. If no keyboard is connected, click **Keyboards...**, then **Start Scan** to scan for BLE devices
-4. Select your ZMK keyboard from the discovered devices list
-5. Battery levels update automatically via BLE notifications
+1. Open ZMK Statbar. It appears in the menu bar; there is no Dock icon.
+2. Allow Bluetooth access when macOS asks.
+3. Click the menu bar item, then **Keyboards...**, then **Start Scan**, and
+   pick your keyboard.
 
-### Customizing side labels
+The layer name appears next to the batteries within a second or two. If only
+batteries appear, see Troubleshooting.
 
-The menu bar shows `C` (Central) and `P` (Peripheral) by default. To display `L` / `R` instead:
+## Settings
 
-1. Open the popover and locate the `[ L ][ R ]` buttons on the right of each battery row
-2. Tap `L` or `R` on the **Central** row to assign that letter to the central side (the peripheral row flips automatically)
-3. Tap the same letter again to revert to `C` / `P`
+| Setting | Default | What it does |
+|---|---|---|
+| Show Layer in Menu Bar | On | Active layer name and locked-layer badges |
+| Hidden layers | `Mouse` | Comma-separated layer names never shown. Stops an auto-mouse layer raised by trackball motion from making the indicator flicker |
+| Show Held Modifiers | Off | Shows ⌃ ⌥ ⇧ ⌘ while held. Useful for spotting home row mod misfires |
+| Diagram URL | Empty | Template for the cheat sheet, see below |
+| Show Caps Lock | On | Caps Lock symbol while Caps Lock is on |
+| Low Battery Alerts | On, at 15% | Notification when a half drops to the threshold |
+| Hide Battery Icon, Single Line Layout, Swap Battery Positions | Off | Battery display options from ZMK Battery Bar |
+| Auto-Switch to Active Keyboard | Off | Follows whichever saved keyboard you are typing on (needs Input Monitoring) |
+| Launch at Login | Off | Starts the app when you log in |
 
-When the keyboard reports more than one peripheral (for example a dongle as the central with two halves), each **Peripheral** row gets its own `[ L ][ R ]` buttons instead. Once every peripheral has a distinct letter, the menu bar shows those peripherals in place of the central row.
+### Cheat sheet
 
-Labels are stored per keyboard, so each registered keyboard keeps its own assignment.
+The cheat sheet needs a URL where your per-layer diagrams live, with `{layer}`
+where the layer name goes. If your zmk-config draws one SVG per layer with
+keymap-drawer, the raw GitHub URL works directly:
 
-## How It Works
-
-1. On launch, the app connects to the previously saved keyboard via `retrievePeripherals(withIdentifiers:)`
-2. It discovers the BLE Battery Service (0x180F) and Battery Level Characteristic (0x2A19)
-3. Descriptor `0x2901` (User Description) is read to determine Central vs Peripheral
-4. Battery level notifications are subscribed to for real-time updates, with 60-second polling as fallback
-5. The status bar icon is rendered as an `NSImage` using SwiftUI `ImageRenderer`
-
-### ZMK Configuration
-
-If the Peripheral battery level is not displayed, add the following to your Central side's `.conf` file:
-
-```ini
-CONFIG_ZMK_BATTERY_REPORTING=y
-CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_PROXY=y
-CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING=y
 ```
+https://raw.githubusercontent.com/<you>/<zmk-config>/main/keymap-drawer/<board>_{layer}.svg
+```
+
+`{layer}` becomes the layer name in lowercase, with anything that is not a
+letter or digit turned into a hyphen: `Nav/Num` becomes `nav-num`. Paste the
+template into the Diagram URL field and click **Cheat Sheet**. The window floats
+above other apps, remembers its size and position, and reloads its diagrams
+whenever the keyboard reports a new firmware build.
+
+## Troubleshooting
+
+**Only batteries appear, no layer.** The keyboard is not exposing the module's
+service to macOS. Check that the central half was flashed with the module, then
+remove and re-pair the keyboard so macOS refreshes its cached service list.
+
+**The split link warning stays on while both halves work.** Make sure the
+central half runs the current zmk-host-status. Early versions had a bug that
+reported the link as down.
+
+**The peripheral battery is missing.** Add the battery proxy settings from the
+Firmware section to the central half's `.conf`, reflash and re-pair.
+
+**No low battery notification.** Allow notifications for ZMK Statbar in System
+Settings, Notifications.
+
+## How it works
+
+The app shares the Bluetooth connection macOS already keeps open for your
+keyboard; it never opens one of its own. It reads the standard Battery Service
+for battery levels, and the zmk-host-status service for everything else. Both
+push updates when something changes, so the app sits idle otherwise. A slow
+poll catches anything a notification missed.
+
+The zmk-host-status protocol is documented in its
+[README](https://github.com/johncattrall/zmk-host-status#protocol), so other
+host apps can read it too.
 
 ## Development
 
 ```sh
-# Debug build
-swift build
-
-# Build and launch local .app bundle (ad-hoc signing)
-./scripts/build-app.sh
+swift build                    # debug build
+swift test                     # unit tests
+./scripts/build-app.sh         # build/ZMK Statbar.app, ad-hoc signed
 open "build/ZMK Statbar.app"
-
-# Install to /Applications
-cp -r "build/ZMK Statbar.app" /Applications/
-
-# Release .app bundle with Developer ID signing
-./scripts/build-app.sh "Developer ID Application: Your Name (TEAMID)" "1.0.0"
 ```
 
-### Release
+Launch the `.app` bundle rather than `swift run` when testing anything to do
+with Bluetooth or the menu bar: the raw executable has no `Info.plist`, so
+neither works reliably.
 
-Releases are automated via GitHub Actions. Pushing a version tag triggers the full pipeline:
-
-```sh
-git tag v1.2.0
-git push origin v1.2.0
-```
-
-This will automatically:
-
-1. Build the app in release mode
-2. Sign with Developer ID certificate (hardened runtime)
-3. Notarize with Apple and staple the ticket
-4. Create a GitHub Release with the signed zip
-5. Update a Homebrew Cask (disabled until this fork has its own tap)
-
-#### Required GitHub Secrets
-
-| Secret | Description |
+| Directory | Contents |
 |---|---|
-| `DEVELOPER_ID_CERTIFICATE_BASE64` | Base64-encoded .p12 certificate |
-| `DEVELOPER_ID_CERTIFICATE_PASSWORD` | Password for the .p12 file |
-| `APPLE_ID` | Apple ID email for notarization |
-| `APPLE_ID_PASSWORD` | App-specific password for notarization |
-| `APPLE_TEAM_ID` | Apple Developer Team ID |
-| `HOMEBREW_TAP_TOKEN` | GitHub PAT with write access to homebrew-tap repo |
+| `Sources/.../App/` | Entry point, AppDelegate, status item, cheat sheet window |
+| `Sources/.../BLE/` | CoreBluetooth manager, battery and host status parsing |
+| `Sources/.../Views/` | SwiftUI views: menu bar content, panel, keyboard list, cheat sheet |
+| `Sources/.../Models/` | Battery and host status state, settings, saved keyboards |
+| `Sources/.../Utilities/` | Pure helpers (layer display, diagram URLs, alert policy) and system integrations |
 
-#### Manual Release (without CI)
+Logic that can be tested without Bluetooth lives in small pure helpers with
+tests under `Tests/`. `AGENTS.md` describes the conventions in more detail.
 
-```sh
-export APPLE_ID="your@email.com"
-export APPLE_ID_PASSWORD="xxxx-xxxx-xxxx-xxxx"
-export APPLE_TEAM_ID="XXXXXXXXXX"
-./scripts/release.sh 1.2.0 "Developer ID Application: Your Name (TEAMID)"
-```
+### Releases
 
-### Architecture
-
-| Directory | Description |
-|---|---|
-| `Sources/.../App/` | Entry point, AppDelegate, NSStatusItem, NSPanel popover |
-| `Sources/.../BLE/` | CoreBluetooth manager, device discovery, battery reading |
-| `Sources/.../Views/` | SwiftUI views (status bar, popover, keyboard list) |
-| `Sources/.../Models/` | BatteryState (@Observable), AppSettings (UserDefaults), KeyboardDevice |
-| `Sources/.../Utilities/` | Launch at login (SMAppService wrapper), active-keyboard HID monitor |
+Pushing a version tag runs `.github/workflows/release.yml`, which builds, signs
+and notarizes the app and attaches it to a GitHub Release. Signing needs the
+Developer ID secrets listed in the workflow. The Homebrew step is switched off
+until this fork has its own tap.
 
 ## Credits
 
@@ -177,6 +212,9 @@ ZMK Statbar exists because of [ZMK Battery Bar](https://github.com/itouuuuuuuuu/
 by Masafumi ITO. If this app is useful to you, consider supporting the original
 author at <https://github.com/sponsors/itouuuuuuuuu>.
 
+Keymap diagrams come from [keymap-drawer](https://github.com/caksoylar/keymap-drawer)
+by [caksoylar](https://github.com/caksoylar).
+
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).

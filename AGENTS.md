@@ -12,9 +12,11 @@ Japanese or any other non-English language in the repository's files.
 
 ## Project Overview
 
-A macOS menu bar app that displays battery levels from ZMK split keyboards via BLE.
+ZMK Statbar: a macOS menu bar app showing a ZMK keyboard's active layer, battery
+levels and split link via BLE. Fork of ZMK Battery Bar; internal target and
+source names (`ZMKBatteryBar`) are kept as upstream so upstream changes merge cleanly.
 
-- **Language**: Swift 6 (`swiftLanguageMode(.v6)` — strict concurrency is enforced; UI-adjacent types are `@MainActor`)
+- **Language**: Swift 6 (`swiftLanguageMode(.v6)`; strict concurrency is enforced; UI-adjacent types are `@MainActor`)
 - **UI**: AppKit (NSStatusItem + NSPanel) + SwiftUI (panel content, status bar rendering)
 - **BLE**: CoreBluetooth
 - **Build**: Swift Package Manager (no Xcode project)
@@ -48,7 +50,7 @@ permission handling is unstable. The bundle ships `Resources/Info.plist` and is
 code-signed, which the menu bar icon and BLE access need.
 
 Notes:
-- It is a menu bar (`.accessory`) app — there is no Dock icon or window; look
+- It is a menu bar (`.accessory`) app; there is no Dock icon or window; look
   in the menu bar (may be hidden behind the notch on MacBooks).
 - The bundle reads/writes its own `UserDefaults` domain, separate from
   `swift run`, so saved keyboards may differ between the two launch methods.
@@ -62,9 +64,11 @@ Notes:
 ## Architecture
 
 - `Sources/ZMKBatteryBar/Main.swift` - Entry point (`.accessory` activation policy)
-- `Sources/ZMKBatteryBar/App/AppDelegate.swift` - NSStatusItem, status bar panel, render timer
+- `Sources/ZMKBatteryBar/App/AppDelegate.swift` - NSStatusItem, status bar panel, render timers, low battery alerts
+- `Sources/ZMKBatteryBar/App/CheatSheetController.swift` - floating per-layer keymap diagram window
 - `Sources/ZMKBatteryBar/BLE/`
-  - `BLEManager.swift` - CoreBluetooth central: scanning, connection, reconnect, battery notifications
+  - `BLEManager.swift` - CoreBluetooth central: scanning, connection, reconnect, battery and host status notifications
+  - `HostStatusPayload.swift` - parser for the optional zmk-host-status GATT service (layers, split link, modifiers, output)
   - `BatteryStateComposer.swift`, `BatteryPayload.swift`, `DescriptorRoleParser.swift`, `RoleAssigner.swift`, `ReconnectBackoff.swift` - pure logic extracted from BLEManager (see Testing)
 - `Sources/ZMKBatteryBar/Views/` - SwiftUI: `StatusBarView` (menu bar content), `MenuContentView` (panel), `KeyboardListView` (scan/save/manage keyboards), `BatteryIconView` (pixel-snapped battery icon)
 - `Sources/ZMKBatteryBar/Models/` - `BatteryState` (@Observable), `AppSettings` (UserDefaults-backed), `KeyboardDevice` (saved keyboard + label config), `PanelNavigation`
@@ -92,7 +96,8 @@ CoreBluetooth is not unit-testable, so BLE/UI logic that can be expressed as a
 pure function lives in small standalone enums/structs (`BatteryStateComposer`,
 `RoleAssigner`, `DescriptorRoleParser`, `ReconnectBackoff`, `BatteryPayload`,
 `StatusBarLayout`, `BatteryIconLayout`, `TimeAgoFormatter`,
-`ActiveKeyboardResolver`, `KeyboardInputThrottle`) with tests under
+`ActiveKeyboardResolver`, `KeyboardInputThrottle`, `HostStatusPayload`,
+`LayerDisplayResolver`, `LayerDiagramURL`, `LowBatteryAlertPolicy`) with tests under
 `Tests/ZMKBatteryBarTests/` mirroring the source layout. When adding logic to
 `BLEManager` or views, prefer extracting it into a testable helper the same way.
 
@@ -101,7 +106,7 @@ suite.
 
 ### BLE state-machine invariants
 
-When touching `BLEManager`, keep these in mind — every one of them has already
+When touching `BLEManager`, keep these in mind. Every one of them has already
 been the subject of a real bug:
 
 - **Reconnect backoff is reset on transport-level success** (`didConnect`), and
@@ -119,10 +124,10 @@ been the subject of a real bug:
   tear the connection down only when *no* characteristic was found at all.
 - **Session reset state lives in one place.** The
   `stopPollingTimer` / `resetCharacteristicState` / `batteryState.reset` triple
-  must not be duplicated across recovery paths — duplicating it caused both
+  must not be duplicated across recovery paths: duplicating it caused both
   double `@Observable` invalidation and drift between paths.
 - Log discovery errors **before** any identity guard, otherwise errors for
-  superseded peripherals are silently swallowed — exactly the flakiness class
+  superseded peripherals are silently swallowed, exactly the flakiness class
   these code paths exist to diagnose.
 
 ## Workflow
@@ -133,7 +138,7 @@ been the subject of a real bug:
 - Do not merge a PR unless explicitly asked to.
 - After a merge: `git checkout main && git pull`, and delete the merged branch.
 - Cross-check non-trivial review findings with a second agent before acting on
-  them — see `.claude/rules/review-and-release.md`.
+  them; see `.claude/rules/review-and-release.md`.
 
 ## Release
 
@@ -144,8 +149,8 @@ Releases are driven by tags (`.github/workflows/release.yml`):
    `Bump version to X.Y.Z`), then merge via PR.
 2. Push tag `vX.Y.Z`. The workflow builds a universal binary, signs it with the
    Developer ID certificate, notarizes it (`scripts/notarize.sh`), creates the
-   GitHub Release with a zip asset, and updates the Homebrew cask at
-   `itouuuuuuuuu/homebrew-tap` (`Casks/zmk-battery-bar.rb`).
+   GitHub Release with a zip asset. The Homebrew cask step is disabled until
+   this fork has its own tap.
 
 `scripts/release.sh <version> [signing-identity]` performs the same steps
 locally; `scripts/build-app.sh [signing-identity] [version]` builds and signs
@@ -155,8 +160,8 @@ the bundle only.
 
 Read the relevant file before doing that kind of work:
 
-- `.claude/rules/ble-domain-knowledge.md` — ZMK firmware and BLE facts the
+- `.claude/rules/ble-domain-knowledge.md`: ZMK firmware and BLE facts the
   implementation depends on (push vs. poll semantics, split proxying, GATT
   caching, causes of a legitimate 0% reading).
-- `.claude/rules/review-and-release.md` — the review / cross-check / fix /
+- `.claude/rules/review-and-release.md`: the review / cross-check / fix /
   release loop this project uses.
