@@ -3,8 +3,8 @@ set -euo pipefail
 
 VERSION="${1:?Usage: $0 <version> [signing-identity]}"
 TAG="v${VERSION}"
-DISPLAY_NAME="ZMK Battery Bar"
-ZIP_NAME="ZMKBatteryBar-${VERSION}.zip"
+DISPLAY_NAME="ZMK Statbar"
+ZIP_NAME="ZMKStatbar-${VERSION}.zip"
 
 # Signing identity: pass as second argument, or default to ad-hoc
 SIGN_IDENTITY="${2:--}"

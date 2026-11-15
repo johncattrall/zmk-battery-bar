@@ -19,7 +19,7 @@ final class ActiveKeyboardMonitor {
 
   private var manager: IOHIDManager?
   private var throttle = KeyboardInputThrottle()
-  private static let logger = Logger(subsystem: "com.zmk-battery-bar.app", category: "ActiveKeyboardMonitor")
+  private static let logger = Logger(subsystem: "com.johncattrall.zmkstatbar", category: "ActiveKeyboardMonitor")
 
   private static let keyboardUsagePage = Int(kHIDPage_KeyboardOrKeypad)
 

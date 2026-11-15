@@ -3,7 +3,7 @@ import os
 
 final class AppSettings {
   private let defaults: UserDefaults
-  private static let logger = Logger(subsystem: "com.zmk-battery-bar.app", category: "AppSettings")
+  private static let logger = Logger(subsystem: "com.johncattrall.zmkstatbar", category: "AppSettings")
 
   init(defaults: UserDefaults = .standard) {
     self.defaults = defaults

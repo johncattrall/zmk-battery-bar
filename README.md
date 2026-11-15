@@ -1,20 +1,25 @@
 <p align="center">
-  <img src="assets/app-icon.png" alt="ZMK Battery Bar icon" width="256" />
+  <img src="assets/app-icon.png" alt="ZMK Statbar icon" width="256" />
 </p>
 
-# ZMK Battery Bar
+# ZMK Statbar
 
-A macOS menu bar app that displays battery levels from ZMK split keyboards via BLE.
+A macOS menu bar app for ZMK keyboards: the active layer, the battery of each
+half, and the link between the halves, at a glance.
+
+ZMK Statbar is a fork of [ZMK Battery Bar](https://github.com/itouuuuuuuuu/zmk-battery-bar)
+by Masafumi ITO, whose app does all of the Bluetooth and battery work underneath.
+If battery levels are all you need, use the original. The layer display was also
+offered upstream in [#84](https://github.com/itouuuuuuuuu/zmk-battery-bar/pull/84).
 
 ![Screenshot](assets/screenshot.png)
 
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-blue)
 ![Swift 6.0](https://img.shields.io/badge/Swift-6.0-orange)
-![Release](https://img.shields.io/github/v/release/itouuuuuuuuu/zmk-battery-bar)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
 
-## Layer indicator (optional firmware module)
+## Layer display
 
 Keyboards running the [zmk-host-status](https://github.com/johncattrall/zmk-host-status)
 ZMK module also get, next to the batteries:
@@ -29,19 +34,23 @@ Layers named in "Hidden layers" (default: `Mouse`) are never shown, so an
 auto-mouse layer raised by trackball motion does not make the indicator flicker.
 Keyboards without the module are unaffected and show batteries only.
 
+To set it up, add the module to your zmk-config's `config/west.yml`, reflash the
+central half (the right half on most splits), then remove the keyboard in System
+Settings, Bluetooth, and pair it again so macOS picks up the new service.
+
 ## Features
 
-- **Two-line status bar display** — Shows Central (C) and Peripheral (P) battery levels with custom-drawn battery icons
-- **BLE Battery Service** — Reads battery levels via standard BLE Battery Service (0x180F) with notification subscription
-- **Auto Central/Peripheral detection** — Uses BLE descriptor (User Description) to identify each half of the split keyboard
-- **Multiple keyboard support** — Register and switch between multiple ZMK keyboards
-- **Customizable side labels** — Override the default `C` / `P` menu bar labels with `L` / `R` per keyboard to match your physical left/right layout
-- **Single line layout** — Optionally show both battery levels on one line (e.g. `C50% P50%`)
-- **Hide battery icon** — Optionally hide the battery icons and show only the labels and percentages
-- **Swap battery positions** — Optionally swap the order of the two battery rows in the menu bar
-- **Auto-reconnect** — Automatically reconnects with exponential backoff when the keyboard disconnects
-- **Auto-switch to the active keyboard** — Optionally follow whichever saved keyboard you are typing on (requires the Input Monitoring permission; only the source device of each key press is read, never the keys themselves)
-- **Launch at Login** — Optional auto-start via SMAppService
+- **Two-line status bar display**: Shows Central (C) and Peripheral (P) battery levels with custom-drawn battery icons
+- **BLE Battery Service**: Reads battery levels via standard BLE Battery Service (0x180F) with notification subscription
+- **Auto Central/Peripheral detection**: Uses BLE descriptor (User Description) to identify each half of the split keyboard
+- **Multiple keyboard support**: Register and switch between multiple ZMK keyboards
+- **Customizable side labels**: Override the default `C` / `P` menu bar labels with `L` / `R` per keyboard to match your physical left/right layout
+- **Single line layout**: Optionally show both battery levels on one line (e.g. `C50% P50%`)
+- **Hide battery icon**: Optionally hide the battery icons and show only the labels and percentages
+- **Swap battery positions**: Optionally swap the order of the two battery rows in the menu bar
+- **Auto-reconnect**: Automatically reconnects with exponential backoff when the keyboard disconnects
+- **Auto-switch to the active keyboard**: Optionally follow whichever saved keyboard you are typing on (requires the Input Monitoring permission; only the source device of each key press is read, never the keys themselves)
+- **Launch at Login**: Optional auto-start via SMAppService
 
 ## Requirements
 
@@ -50,13 +59,19 @@ Keyboards without the module are unaffected and show batteries only.
 
 ## Install
 
+There is no prebuilt release yet. Build from source (requires Xcode or the Xcode
+command line tools):
+
 ```sh
-brew install --cask itouuuuuuuuu/tap/zmk-battery-bar
+git clone https://github.com/johncattrall/zmk-statbar
+cd zmk-statbar
+./scripts/build-app.sh
+cp -r "build/ZMK Statbar.app" /Applications/
 ```
 
 ## Usage
 
-1. Launch ZMK Battery Bar — it appears in the menu bar with `C` and `P` battery levels
+1. Launch ZMK Statbar: it appears in the menu bar with `C` and `P` battery levels
 2. Click the status bar item to open the popover
 3. If no keyboard is connected, click **Keyboards...**, then **Start Scan** to scan for BLE devices
 4. Select your ZMK keyboard from the discovered devices list
@@ -100,10 +115,10 @@ swift build
 
 # Build and launch local .app bundle (ad-hoc signing)
 ./scripts/build-app.sh
-open "build/ZMK Battery Bar.app"
+open "build/ZMK Statbar.app"
 
 # Install to /Applications
-cp -r "build/ZMK Battery Bar.app" /Applications/
+cp -r "build/ZMK Statbar.app" /Applications/
 
 # Release .app bundle with Developer ID signing
 ./scripts/build-app.sh "Developer ID Application: Your Name (TEAMID)" "1.0.0"
@@ -124,7 +139,7 @@ This will automatically:
 2. Sign with Developer ID certificate (hardened runtime)
 3. Notarize with Apple and staple the ticket
 4. Create a GitHub Release with the signed zip
-5. Update the [Homebrew Cask](https://github.com/itouuuuuuuuu/homebrew-tap) with the new version and SHA256
+5. Update a Homebrew Cask (disabled until this fork has its own tap)
 
 #### Required GitHub Secrets
 
@@ -156,9 +171,11 @@ export APPLE_TEAM_ID="XXXXXXXXXX"
 | `Sources/.../Models/` | BatteryState (@Observable), AppSettings (UserDefaults), KeyboardDevice |
 | `Sources/.../Utilities/` | Launch at login (SMAppService wrapper), active-keyboard HID monitor |
 
-## Sponsorship
+## Credits
 
-ZMK Battery Bar is free and open source. If it's been useful to you, you can support continued development via the **Sponsor** button at the top of this repository, or directly at <https://github.com/sponsors/itouuuuuuuuu>.
+ZMK Statbar exists because of [ZMK Battery Bar](https://github.com/itouuuuuuuuu/zmk-battery-bar)
+by Masafumi ITO. If this app is useful to you, consider supporting the original
+author at <https://github.com/sponsors/itouuuuuuuuu>.
 
 ## License
 

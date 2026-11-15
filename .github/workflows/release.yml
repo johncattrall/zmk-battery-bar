@@ -62,16 +62,16 @@ jobs:
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          ./scripts/notarize.sh "build/ZMK Battery Bar.app"
+          ./scripts/notarize.sh "build/ZMK Statbar.app"
 
       - name: Create release zip
         id: sha
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           cd build
-          zip -r "../ZMKBatteryBar-${VERSION}.zip" "ZMK Battery Bar.app"
+          zip -r "../ZMKStatbar-${VERSION}.zip" "ZMK Statbar.app"
           cd ..
-          SHA256=$(shasum -a 256 "ZMKBatteryBar-${VERSION}.zip" | awk '{print $1}')
+          SHA256=$(shasum -a 256 "ZMKStatbar-${VERSION}.zip" | awk '{print $1}')
           echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
@@ -82,15 +82,18 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
             echo "Release ${GITHUB_REF_NAME} already exists, uploading asset to existing release"
-            gh release upload "${GITHUB_REF_NAME}" "ZMKBatteryBar-${VERSION}.zip" --clobber
+            gh release upload "${GITHUB_REF_NAME}" "ZMKStatbar-${VERSION}.zip" --clobber
           else
             gh release create "${GITHUB_REF_NAME}" \
-              "ZMKBatteryBar-${VERSION}.zip" \
+              "ZMKStatbar-${VERSION}.zip" \
               --title "${GITHUB_REF_NAME}" \
               --generate-notes
           fi
 
       - name: Update Homebrew Cask
+        # Disabled until zmk-statbar has its own Homebrew tap. The original
+        # step published to the upstream author's tap.
+        if: false
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |

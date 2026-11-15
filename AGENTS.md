@@ -37,8 +37,8 @@ the **`.app` bundle**, not the raw binary:
 
 ```sh
 pkill -f ZMKBatteryBar            # stop any running instance first
-./scripts/build-app.sh            # produces build/ZMK Battery Bar.app
-open "build/ZMK Battery Bar.app"  # launch; icon appears in the menu bar
+./scripts/build-app.sh            # produces build/ZMK Statbar.app
+open "build/ZMK Statbar.app"      # launch; icon appears in the menu bar
 ```
 
 Do **not** rely on `swift run ZMKBatteryBar` (or running `.build/.../ZMKBatteryBar`
@@ -57,7 +57,7 @@ Notes:
   Input Monitoring grant is tied to the code signature, and an ad-hoc
   signature changes on every rebuild, so TCC silently drops the grant and the
   monitor never starts. If a stale grant persists, run
-  `tccutil reset ListenEvent com.zmk-battery-bar.app` and re-allow.
+  `tccutil reset ListenEvent com.johncattrall.zmkstatbar` and re-allow.
 
 ## Architecture
 

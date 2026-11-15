@@ -5,11 +5,11 @@
   <key>LSUIElement</key>
   <true/>
   <key>NSBluetoothAlwaysUsageDescription</key>
-  <string>Bluetooth is required to read battery levels from your keyboard.</string>
+  <string>Bluetooth is required to read battery levels and layer status from your keyboard.</string>
   <key>CFBundleName</key>
-  <string>ZMK Battery Bar</string>
+  <string>ZMK Statbar</string>
   <key>CFBundleIdentifier</key>
-  <string>com.zmk-battery-bar.app</string>
+  <string>com.johncattrall.zmkstatbar</string>
   <key>CFBundleVersion</key>
   <string>1.6.2</string>
   <key>CFBundleShortVersionString</key>

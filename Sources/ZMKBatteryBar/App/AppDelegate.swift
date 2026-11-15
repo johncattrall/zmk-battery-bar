@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let panelNavigation = PanelNavigation()
   private var bleManager: BLEManager!
   private let activeKeyboardMonitor = ActiveKeyboardMonitor()
-  private static let logger = Logger(subsystem: "com.zmk-battery-bar.app", category: "AppDelegate")
+  private static let logger = Logger(subsystem: "com.johncattrall.zmkstatbar", category: "AppDelegate")
 
   private var lastRenderedRows: [StatusBarRow] = []
   private var lastRenderedLayerInfo: StatusBarLayerInfo?

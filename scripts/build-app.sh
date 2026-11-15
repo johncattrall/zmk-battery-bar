@@ -2,7 +2,7 @@
 set -euo pipefail
 
 EXECUTABLE_NAME="ZMKBatteryBar"
-DISPLAY_NAME="ZMK Battery Bar"
+DISPLAY_NAME="ZMK Statbar"
 ARCHS=("arm64" "x86_64")
 APP_DIR="build/${DISPLAY_NAME}.app"
 CONTENTS_DIR="${APP_DIR}/Contents"

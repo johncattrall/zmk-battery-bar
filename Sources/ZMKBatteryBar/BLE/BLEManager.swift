@@ -37,7 +37,7 @@ final class BLEManager: NSObject, ObservableObject, @preconcurrency CBCentralMan
   // Unified logging rather than stdout: a bundle launched from Finder or at
   // login has no stdout to read, and these messages exist to diagnose
   // connection flakiness after the fact in Console.app.
-  private static let logger = Logger(subsystem: "com.zmk-battery-bar.app", category: "BLEManager")
+  private static let logger = Logger(subsystem: "com.johncattrall.zmkstatbar", category: "BLEManager")
 
   // MARK: - Published Properties
 
