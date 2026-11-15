@@ -20,6 +20,7 @@ final class AppSettings {
     static let hiddenLayerNames = "hiddenLayerNames"
     static let showModifiers = "showModifiers"
     static let showCapsLock = "showCapsLock"
+    static let showBatteries = "showBatteries"
     static let lowBatteryAlerts = "lowBatteryAlerts"
     static let lowBatteryThreshold = "lowBatteryThreshold"
     static let keymapDiagram = "keymapDiagram"
@@ -42,6 +43,14 @@ final class AppSettings {
   var showCapsLock: Bool {
     get { bool(Keys.showCapsLock, default: true) }
     set { defaults.set(newValue, forKey: Keys.showCapsLock) }
+  }
+
+  /// Draw battery levels in the menu bar. Turning this off leaves only the
+  /// layer indicator; batteries still show whenever there is no layer to
+  /// show (see `StatusBarLayout.showsBatteries`). Defaults to true.
+  var showBatteries: Bool {
+    get { bool(Keys.showBatteries, default: true) }
+    set { defaults.set(newValue, forKey: Keys.showBatteries) }
   }
 
   /// Post a notification when a keyboard half drops to the threshold.

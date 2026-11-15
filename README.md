@@ -132,6 +132,7 @@ batteries appear, see Troubleshooting.
 | Keymap Diagram | Empty | The keymap-drawer SVG for the cheat sheet, see below |
 | Show Caps Lock | On | Caps Lock symbol while Caps Lock is on |
 | Low Battery Alerts | On, at 15% | Notification when a half drops to the threshold |
+| Show Batteries in Menu Bar | On | Turn off to show only the layer. Batteries come back whenever there is no layer to show, and low battery alerts still fire |
 | Hide Battery Icon, Single Line Layout, Swap Battery Positions | Off | Battery display options from ZMK Battery Bar |
 | Auto-Switch to Active Keyboard | Off | Follows whichever saved keyboard you are typing on (needs Input Monitoring) |
 | Launch at Login | Off | Starts the app when you log in |

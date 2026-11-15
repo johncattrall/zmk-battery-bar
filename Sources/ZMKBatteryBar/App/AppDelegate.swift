@@ -186,7 +186,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       rows: rows,
       showBatteryIcon: appSettings.showBatteryIcon,
       singleLine: appSettings.singleLineLayout,
-      layerInfo: layerInfo
+      layerInfo: layerInfo,
+      showBatteries: StatusBarLayout.showsBatteries(
+        setting: appSettings.showBatteries, layerInfo: layerInfo)
     )
     .environment(\.displayScale, renderScale)
     let renderer = ImageRenderer(content: content)

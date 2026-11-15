@@ -31,6 +31,8 @@ struct StatusBarView: View {
   /// unchanged from the two-line layout.
   var singleLine: Bool = false
   var layerInfo: StatusBarLayerInfo? = nil
+  /// False draws the layer information only.
+  var showBatteries: Bool = true
 
   private static let labelFont = Font.system(size: 11, weight: .semibold, design: .rounded)
   private static let singleLineFont = Font.system(size: 13, weight: .semibold, design: .rounded)
@@ -46,10 +48,12 @@ struct StatusBarView: View {
       if let layerInfo {
         layerBody(layerInfo)
       }
-      if singleLine {
-        singleLineBody
-      } else {
-        twoLineBody
+      if showBatteries {
+        if singleLine {
+          singleLineBody
+        } else {
+          twoLineBody
+        }
       }
     }
     .frame(height: 22)

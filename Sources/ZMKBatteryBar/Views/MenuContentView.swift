@@ -13,6 +13,7 @@ struct MenuContentView: View {
   var onLowBatteryAlertsChange: () -> Void = {}
   var onAutoSwitchChange: () -> Void = {}
 
+  @State private var showBatteries = true
   @State private var hideBatteryIcon = false
   @State private var singleLineLayout = false
   @State private var swapBatteryIconPositions = false
@@ -84,23 +85,34 @@ struct MenuContentView: View {
 
       Divider()
 
-      Toggle("Hide Battery Icon", isOn: $hideBatteryIcon)
-        .onChange(of: hideBatteryIcon) { _, newValue in
-          appSettings.showBatteryIcon = !newValue
-          onLabelChange()
-        }
+      if hostStatusState.isAvailable {
+        Toggle("Show Batteries in Menu Bar", isOn: $showBatteries)
+          .onChange(of: showBatteries) { _, newValue in
+            appSettings.showBatteries = newValue
+            onLabelChange()
+          }
+          .help("Turn off to show only the layer. Batteries still appear when no layer is shown, and low battery alerts still fire.")
+      }
 
-      Toggle("Single Line Layout", isOn: $singleLineLayout)
-        .onChange(of: singleLineLayout) { _, newValue in
-          appSettings.singleLineLayout = newValue
-          onLabelChange()
-        }
+      if showBatteries || !hostStatusState.isAvailable {
+        Toggle("Hide Battery Icon", isOn: $hideBatteryIcon)
+          .onChange(of: hideBatteryIcon) { _, newValue in
+            appSettings.showBatteryIcon = !newValue
+            onLabelChange()
+          }
 
-      Toggle("Swap Battery Positions", isOn: $swapBatteryIconPositions)
-        .onChange(of: swapBatteryIconPositions) { _, newValue in
-          appSettings.swapBatteryIconPositions = newValue
-          onLabelChange()
-        }
+        Toggle("Single Line Layout", isOn: $singleLineLayout)
+          .onChange(of: singleLineLayout) { _, newValue in
+            appSettings.singleLineLayout = newValue
+            onLabelChange()
+          }
+
+        Toggle("Swap Battery Positions", isOn: $swapBatteryIconPositions)
+          .onChange(of: swapBatteryIconPositions) { _, newValue in
+            appSettings.swapBatteryIconPositions = newValue
+            onLabelChange()
+          }
+      }
 
       if hostStatusState.isAvailable {
         Toggle("Show Layer in Menu Bar", isOn: $showLayerIndicator)
@@ -227,6 +239,7 @@ struct MenuContentView: View {
     .padding(12)
     .frame(width: 260)
     .onAppear {
+      showBatteries = appSettings.showBatteries
       hideBatteryIcon = !appSettings.showBatteryIcon
       singleLineLayout = appSettings.singleLineLayout
       swapBatteryIconPositions = appSettings.swapBatteryIconPositions
