@@ -11,9 +11,9 @@
   <key>CFBundleIdentifier</key>
   <string>com.johncattrall.zmkstatbar</string>
   <key>CFBundleVersion</key>
-  <string>1.6.2</string>
+  <string>2.0.0</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.6.2</string>
+  <string>2.0.0</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>CFBundleExecutable</key>
