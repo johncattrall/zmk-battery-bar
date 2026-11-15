@@ -65,7 +65,7 @@ Notes:
 
 - `Sources/ZMKBatteryBar/Main.swift` - Entry point (`.accessory` activation policy)
 - `Sources/ZMKBatteryBar/App/AppDelegate.swift` - NSStatusItem, status bar panel, render timers, low battery alerts
-- `Sources/ZMKBatteryBar/App/CheatSheetController.swift` - floating per-layer keymap diagram window
+- `Sources/ZMKBatteryBar/App/CheatSheetController.swift` - floating cheat sheet window showing the current layer of a keymap-drawer SVG (cropping logic in `Utilities/KeymapDiagram.swift`)
 - `Sources/ZMKBatteryBar/BLE/`
   - `BLEManager.swift` - CoreBluetooth central: scanning, connection, reconnect, battery and host status notifications
   - `HostStatusPayload.swift` - parser for the optional zmk-host-status GATT service (layers, split link, modifiers, output)
@@ -97,7 +97,7 @@ pure function lives in small standalone enums/structs (`BatteryStateComposer`,
 `RoleAssigner`, `DescriptorRoleParser`, `ReconnectBackoff`, `BatteryPayload`,
 `StatusBarLayout`, `BatteryIconLayout`, `TimeAgoFormatter`,
 `ActiveKeyboardResolver`, `KeyboardInputThrottle`, `HostStatusPayload`,
-`LayerDisplayResolver`, `LayerDiagramURL`, `LowBatteryAlertPolicy`) with tests under
+`LayerDisplayResolver`, `KeymapDiagram`, `LowBatteryAlertPolicy`) with tests under
 `Tests/ZMKBatteryBarTests/` mirroring the source layout. When adding logic to
 `BLEManager` or views, prefer extracting it into a testable helper the same way.
 
@@ -149,8 +149,8 @@ Releases are driven by tags (`.github/workflows/release.yml`):
    `Bump version to X.Y.Z`), then merge via PR.
 2. Push tag `vX.Y.Z`. The workflow builds a universal binary, signs it with the
    Developer ID certificate, notarizes it (`scripts/notarize.sh`), creates the
-   GitHub Release with a zip asset. The Homebrew cask step is disabled until
-   this fork has its own tap.
+   GitHub Release with a zip asset, and updates `Casks/zmk-statbar.rb` in
+   `johncattrall/homebrew-tap` (skipped without `HOMEBREW_TAP_TOKEN`).
 
 `scripts/release.sh <version> [signing-identity]` performs the same steps
 locally; `scripts/build-app.sh [signing-identity] [version]` builds and signs

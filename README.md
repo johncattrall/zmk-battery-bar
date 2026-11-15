@@ -19,10 +19,6 @@ layer you are on, which layers are locked on, how much battery each half has,
 and whether the halves are still talking to each other. It can also keep a
 floating diagram of your current layer on screen while you learn a new layout.
 
-It is a fork of [ZMK Battery Bar](https://github.com/itouuuuuuuuu/zmk-battery-bar)
-by Masafumi ITO, whose app does the Bluetooth and battery work underneath. If
-battery levels are all you need, use the original.
-
 <!-- TODO: add a screenshot of the menu bar and panel here -->
 
 ## What it shows
@@ -97,8 +93,17 @@ keyboard offers, and the new one stays invisible until you re-pair.
 
 ### 2. App
 
-There is no prebuilt release yet, so build from source. You need Xcode or the
-Xcode command line tools.
+Install with Homebrew:
+
+```sh
+brew install johncattrall/tap/zmk-statbar
+```
+
+Or download the zip from [Releases](https://github.com/johncattrall/zmk-statbar/releases)
+and move **ZMK Statbar** to Applications. Both are signed and notarized by
+Apple, so macOS opens them without warnings.
+
+To build from source instead you need Xcode or the Xcode command line tools:
 
 ```sh
 git clone https://github.com/johncattrall/zmk-statbar
@@ -124,7 +129,7 @@ batteries appear, see Troubleshooting.
 | Show Layer in Menu Bar | On | Active layer name and locked-layer badges |
 | Hidden layers | `Mouse` | Comma-separated layer names never shown. Stops an auto-mouse layer raised by trackball motion from making the indicator flicker |
 | Show Held Modifiers | Off | Shows ⌃ ⌥ ⇧ ⌘ while held. Useful for spotting home row mod misfires |
-| Diagram URL | Empty | Template for the cheat sheet, see below |
+| Keymap Diagram | Empty | The keymap-drawer SVG for the cheat sheet, see below |
 | Show Caps Lock | On | Caps Lock symbol while Caps Lock is on |
 | Low Battery Alerts | On, at 15% | Notification when a half drops to the threshold |
 | Hide Battery Icon, Single Line Layout, Swap Battery Positions | Off | Battery display options from ZMK Battery Bar |
@@ -133,19 +138,23 @@ batteries appear, see Troubleshooting.
 
 ### Cheat sheet
 
-The cheat sheet needs a URL where your per-layer diagrams live, with `{layer}`
-where the layer name goes. If your zmk-config draws one SVG per layer with
-keymap-drawer, the raw GitHub URL works directly:
+The cheat sheet uses the SVG [keymap-drawer](https://github.com/caksoylar/keymap-drawer)
+draws of your whole keymap, usually `keymap-drawer/<board>.svg` in your
+zmk-config. It shows only the layer you are on and follows you as you switch.
 
-```
-https://raw.githubusercontent.com/<you>/<zmk-config>/main/keymap-drawer/<board>_{layer}.svg
-```
+Under **Keymap Diagram** in the panel, either:
 
-`{layer}` becomes the layer name in lowercase, with anything that is not a
-letter or digit turned into a hyphen: `Nav/Num` becomes `nav-num`. Paste the
-template into the Diagram URL field and click **Cheat Sheet**. The window floats
-above other apps, remembers its size and position, and reloads its diagrams
-whenever the keyboard reports a new firmware build.
+- click **Choose...** and pick the file in your local copy of your zmk-config.
+  It reloads whenever the file changes, works offline and works with private
+  repositories; or
+- paste the file's GitHub link, for example
+  `https://github.com/<you>/<zmk-config>/blob/main/keymap-drawer/<board>.svg`,
+  and press Return. It downloads again whenever you open the window or flash a
+  new firmware build.
+
+Then click **Show Cheat Sheet**. The window floats above other apps and
+remembers its size and position. Layers are matched by the names the keyboard
+reports, which keymap-drawer uses too.
 
 ## Troubleshooting
 
@@ -159,6 +168,9 @@ reported the link as down.
 
 **The peripheral battery is missing.** Add the battery proxy settings from the
 Firmware section to the central half's `.conf`, reflash and re-pair.
+
+**The cheat sheet says a layer is missing.** The layer names in the SVG must
+match your keymap's `display-name`s. Redraw the SVG after renaming layers.
 
 **No low battery notification.** Allow notifications for ZMK Statbar in System
 Settings, Notifications.
@@ -202,15 +214,26 @@ tests under `Tests/`. `AGENTS.md` describes the conventions in more detail.
 ### Releases
 
 Pushing a version tag runs `.github/workflows/release.yml`, which builds, signs
-and notarizes the app and attaches it to a GitHub Release. Signing needs the
-Developer ID secrets listed in the workflow. The Homebrew step is switched off
-until this fork has its own tap.
+and notarizes the app, attaches it to a GitHub Release and updates the cask in
+[johncattrall/homebrew-tap](https://github.com/johncattrall/homebrew-tap). It
+needs these repository secrets:
+
+| Secret | Contents |
+|---|---|
+| `DEVELOPER_ID_CERTIFICATE_BASE64` | Developer ID Application certificate and key, exported as .p12, base64 encoded |
+| `DEVELOPER_ID_CERTIFICATE_PASSWORD` | Password of that .p12 |
+| `APPLE_ID` | Apple ID used for notarization |
+| `APPLE_ID_PASSWORD` | App-specific password for that Apple ID |
+| `APPLE_TEAM_ID` | Team ID of the developer account |
+| `HOMEBREW_TAP_TOKEN` | Token with write access to the tap. Without it the cask update is skipped |
 
 ## Credits
 
-ZMK Statbar exists because of [ZMK Battery Bar](https://github.com/itouuuuuuuuu/zmk-battery-bar)
-by Masafumi ITO. If this app is useful to you, consider supporting the original
-author at <https://github.com/sponsors/itouuuuuuuuu>.
+ZMK Statbar started as a fork of [ZMK Battery Bar](https://github.com/itouuuuuuuuu/zmk-battery-bar)
+by Masafumi ITO, which still does the Bluetooth and battery work underneath. If
+battery levels are all you need, use the original. If this app is useful to
+you, consider supporting the original author at
+<https://github.com/sponsors/itouuuuuuuuu>.
 
 Keymap diagrams come from [keymap-drawer](https://github.com/caksoylar/keymap-drawer)
 by [caksoylar](https://github.com/caksoylar).

@@ -38,7 +38,6 @@ self-healing). Construct the trace before accepting or rejecting one.
    - the release workflow run concluded `success`,
    - the GitHub Release exists with the signed/notarized
      `ZMKStatbar-X.Y.Z.zip` asset,
-   - the Homebrew cask the workflow updates shows the new version (upstream:
-     `Casks/zmk-battery-bar.rb` in `itouuuuuuuuu/homebrew-tap`; a fork needs its
-     own tap and signing/notarization credentials).
+   - the Homebrew cask the workflow updates shows the new version
+     (`Casks/zmk-statbar.rb` in `johncattrall/homebrew-tap`).
 5. Finally update main locally and delete the release branch.
