@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MenuContentView: View {
   @ObservedObject var bleManager: BLEManager
@@ -24,7 +25,7 @@ struct MenuContentView: View {
   @State private var showCapsLock = true
   @State private var lowBatteryAlerts = true
   @State private var lowBatteryThreshold = 15
-  @State private var diagramTemplateText = ""
+  @State private var keymapDiagramText = ""
   @State private var hasInputMonitoringAccess = ActiveKeyboardMonitor.hasAccess
   @State private var now = Date()
   @State private var labelStyleTick = 0
@@ -127,19 +128,20 @@ struct MenuContentView: View {
             onLabelChange()
           }
 
-        HStack {
-          TextField("Diagram URL with {layer}", text: $diagramTemplateText)
-            .textFieldStyle(.roundedBorder)
-            .onSubmit {
-              appSettings.diagramURLTemplate = diagramTemplateText
-              onLabelChange()
-            }
-          Button("Cheat Sheet") {
-            appSettings.diagramURLTemplate = diagramTemplateText
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Keymap Diagram")
+          HStack {
+            TextField("SVG file or GitHub link", text: $keymapDiagramText)
+              .textFieldStyle(.roundedBorder)
+              .onSubmit { saveKeymapDiagram(keymapDiagramText) }
+            Button("Choose...") { chooseKeymapDiagram() }
+          }
+          Button("Show Cheat Sheet") {
+            saveKeymapDiagram(keymapDiagramText)
             onToggleCheatSheet()
           }
         }
-        .help("URL of your keymap-drawer SVGs, with {layer} where the layer name goes, e.g. https://raw.githubusercontent.com/you/zmk-config/main/keymap-drawer/board_{layer}.svg")
+        .help("The SVG keymap-drawer draws of your whole keymap, usually keymap-drawer/<board>.svg in your zmk-config. Choose the file, or paste its GitHub link and press Return.")
       }
 
       Toggle("Show Caps Lock", isOn: $showCapsLock)
@@ -236,8 +238,31 @@ struct MenuContentView: View {
       showCapsLock = appSettings.showCapsLock
       lowBatteryAlerts = appSettings.lowBatteryAlerts
       lowBatteryThreshold = appSettings.lowBatteryThreshold
-      diagramTemplateText = appSettings.diagramURLTemplate
+      keymapDiagramText = appSettings.keymapDiagram
     }
+  }
+
+  private func saveKeymapDiagram(_ value: String) {
+    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard trimmed != appSettings.keymapDiagram else { return }
+    appSettings.keymapDiagram = trimmed
+    onLabelChange()
+  }
+
+  private func chooseKeymapDiagram() {
+    let openPanel = NSOpenPanel()
+    openPanel.title = "Choose Keymap Diagram"
+    openPanel.message = "Pick the SVG keymap-drawer draws of your whole keymap."
+    openPanel.allowedContentTypes = [.svg]
+    openPanel.allowsMultipleSelection = false
+    openPanel.canChooseDirectories = false
+    NSApp.activate()
+    guard openPanel.runModal() == .OK, let url = openPanel.url else { return }
+    let path = (url.path as NSString).abbreviatingWithTildeInPath
+    // Save before touching view state: the menu panel may have closed while
+    // the open panel was up.
+    saveKeymapDiagram(path)
+    keymapDiagramText = path
   }
 
   private func openInputMonitoringSettings() {

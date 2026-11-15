@@ -15,11 +15,12 @@ struct CheatSheetView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
-      Text(model.layerName.isEmpty ? "Keymap" : model.layerName)
-        .font(.headline)
       if let svg = model.svg {
+        // keymap-drawer already titles each layer inside the diagram.
         DiagramWebView(html: Self.html(for: svg))
       } else {
+        Text(model.layerName.isEmpty ? "Keymap" : model.layerName)
+          .font(.headline)
         Text(model.message ?? "Loading...")
           .foregroundStyle(.secondary)
           .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -41,9 +42,9 @@ struct CheatSheetView: View {
   }
 }
 
-/// WKWebView wrapper. Diagrams are fetched by the app and loaded as inline
-/// HTML because raw GitHub URLs serve SVG as text/plain, which a web view
-/// would display as source text. JavaScript is disabled: a keymap diagram
+/// WKWebView wrapper. Diagrams are read by the app and loaded as inline HTML,
+/// so a cropped layer can be shown and raw GitHub links (served as
+/// text/plain) still render. JavaScript is disabled: a keymap diagram
 /// never needs it.
 struct DiagramWebView: NSViewRepresentable {
   let html: String

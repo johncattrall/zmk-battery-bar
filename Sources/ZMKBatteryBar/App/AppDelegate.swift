@@ -245,7 +245,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   @MainActor private func refreshCheatSheet() {
     cheatSheet.update(
       layerName: currentLayerDisplay()?.current,
-      template: appSettings.diagramURLTemplate,
+      setting: appSettings.keymapDiagram,
       buildID: hostStatusState.buildID
     )
   }

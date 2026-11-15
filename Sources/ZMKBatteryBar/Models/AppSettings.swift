@@ -22,7 +22,7 @@ final class AppSettings {
     static let showCapsLock = "showCapsLock"
     static let lowBatteryAlerts = "lowBatteryAlerts"
     static let lowBatteryThreshold = "lowBatteryThreshold"
-    static let diagramURLTemplate = "diagramURLTemplate"
+    static let keymapDiagram = "keymapDiagram"
   }
 
   private func bool(_ key: String, default value: Bool) -> Bool {
@@ -60,11 +60,11 @@ final class AppSettings {
     set { defaults.set(min(max(newValue, 5), 50), forKey: Keys.lowBatteryThreshold) }
   }
 
-  /// URL template for per-layer keymap diagrams, with `{layer}` replaced by
-  /// the active layer's slug. Empty disables the cheat sheet.
-  var diagramURLTemplate: String {
-    get { defaults.string(forKey: Keys.diagramURLTemplate) ?? "" }
-    set { defaults.set(newValue, forKey: Keys.diagramURLTemplate) }
+  /// Where the cheat sheet's keymap-drawer SVG comes from: a local path or
+  /// a web link (see `KeymapDiagram.source(from:)`). Empty disables it.
+  var keymapDiagram: String {
+    get { defaults.string(forKey: Keys.keymapDiagram) ?? "" }
+    set { defaults.set(newValue, forKey: Keys.keymapDiagram) }
   }
 
   /// Whether the active layer (from the zmk-host-status firmware module) is
