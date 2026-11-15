@@ -91,20 +91,24 @@ jobs:
           fi
 
       - name: Update Homebrew Cask
-        # Disabled until zmk-statbar has its own Homebrew tap. The original
-        # step published to the upstream author's tap.
-        if: false
+        # Publishes to johncattrall/homebrew-tap. Skipped when the
+        # HOMEBREW_TAP_TOKEN secret (a token with write access to the tap) is
+        # not set.
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "HOMEBREW_TAP_TOKEN not set, skipping the cask update"
+            exit 0
+          fi
           VERSION="${{ steps.sha.outputs.version }}"
           SHA256="${{ steps.sha.outputs.sha256 }}"
 
-          git clone "https://x-access-token:${GH_TOKEN}@github.com/itouuuuuuuuu/homebrew-tap.git" "$RUNNER_TEMP/tap"
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/johncattrall/homebrew-tap.git" "$RUNNER_TEMP/tap"
           cd "$RUNNER_TEMP/tap"
 
-          sed -i '' "s/version \".*\"/version \"${VERSION}\"/" Casks/zmk-battery-bar.rb
-          sed -i '' "s/sha256 \".*\"/sha256 \"${SHA256}\"/" Casks/zmk-battery-bar.rb
+          sed -i '' "s/version \".*\"/version \"${VERSION}\"/" Casks/zmk-statbar.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"${SHA256}\"/" Casks/zmk-statbar.rb
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -112,7 +116,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Homebrew cask already up to date for ${VERSION}"
           else
-            git commit -m "Update zmk-battery-bar to ${VERSION}"
+            git commit -m "Update zmk-statbar to ${VERSION}"
             git push
           fi
 
