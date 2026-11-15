@@ -41,6 +41,33 @@ struct HostStatusPayloadTests {
     #expect(HostStatusPayload.parseStatus(from: v2)?.activeLayers == 0x43)
   }
 
+  @Test("v1 payload has no v2 extras")
+  func v1HasNoExtras() {
+    #expect(HostStatusPayload.parseStatus(from: Self.v1)?.extras == nil)
+  }
+
+  @Test("parses v2 extras: modifiers, output and profile")
+  func parsesV2() throws {
+    var v2 = Self.v1
+    v2[0] = 0x02
+    // mods: LShift + RGui, flags2: USB output + profile connected, profile 3
+    v2.append(contentsOf: [0b1000_0010, 0b0000_0011, 0x03])
+    let extras = try #require(HostStatusPayload.parseStatus(from: v2)?.extras)
+    #expect(extras.modifiers == 0b1000_0010)
+    #expect(extras.usbOutput)
+    #expect(extras.bleProfileConnected)
+    #expect(extras.bleProfile == 3)
+  }
+
+  @Test("modifier glyphs combine sides in macOS order")
+  func modifierGlyphs() {
+    #expect(HostStatusPayload.modifierGlyphs(0) == "")
+    // LGui + RCtrl + LShift
+    #expect(HostStatusPayload.modifierGlyphs(0b0001_1010) == "\u{2303}\u{21E7}\u{2318}")
+    // LAlt + RAlt shows a single glyph
+    #expect(HostStatusPayload.modifierGlyphs(0b0100_0100) == "\u{2325}")
+  }
+
   @Test("split link down when fewer halves are connected than expected")
   func splitLinkDown() {
     let status = HostStatus(activeLayers: 1, lockedLayers: 0, peripheralsConnected: 0, peripheralsExpected: 1)

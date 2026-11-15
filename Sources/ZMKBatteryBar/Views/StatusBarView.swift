@@ -8,9 +8,19 @@ struct StatusBarRow: Equatable {
 /// Layer and split-link information drawn before the battery rows. Present
 /// only for keyboards running the zmk-host-status firmware module.
 struct StatusBarLayerInfo: Equatable {
-  var layer: LayerDisplayResolver.Display?
+  var layer: LayerDisplayResolver.Display? = nil
   /// True when a split half is not linked to the central half.
-  var splitLinkDown: Bool
+  var splitLinkDown: Bool = false
+  /// Caps Lock state, read from macOS (works for every keyboard).
+  var capsLock: Bool = false
+  /// Held modifier glyphs, e.g. "⌃⇧"; empty when none or disabled.
+  var modifiers: String = ""
+  /// True when the keyboard's output is USB rather than Bluetooth.
+  var usbOutput: Bool = false
+
+  var isEmpty: Bool {
+    layer == nil && !splitLinkDown && !capsLock && modifiers.isEmpty && !usbOutput
+  }
 }
 
 struct StatusBarView: View {
@@ -54,6 +64,10 @@ struct StatusBarView: View {
         Image(systemName: "exclamationmark.triangle.fill")
           .font(.system(size: 11, weight: .semibold))
       }
+      if info.capsLock {
+        Image(systemName: "capslock.fill")
+          .font(.system(size: 11, weight: .semibold))
+      }
       if let layer = info.layer {
         Text(layer.current)
           .font(Self.singleLineFont)
@@ -67,6 +81,16 @@ struct StatusBarView: View {
             .padding(.horizontal, 3)
             .overlay(RoundedRectangle(cornerRadius: 3).stroke(lineWidth: 1))
         }
+      }
+      if !info.modifiers.isEmpty {
+        Text(info.modifiers)
+          .font(Self.singleLineFont)
+      }
+      if info.usbOutput {
+        Text("USB")
+          .font(Self.labelFont)
+          .padding(.horizontal, 3)
+          .overlay(RoundedRectangle(cornerRadius: 3).stroke(lineWidth: 1))
       }
     }
     .lineLimit(1)

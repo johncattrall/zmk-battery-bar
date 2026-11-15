@@ -18,6 +18,53 @@ final class AppSettings {
     static let autoSwitchKeyboard = "autoSwitchKeyboard"
     static let showLayerIndicator = "showLayerIndicator"
     static let hiddenLayerNames = "hiddenLayerNames"
+    static let showModifiers = "showModifiers"
+    static let showCapsLock = "showCapsLock"
+    static let lowBatteryAlerts = "lowBatteryAlerts"
+    static let lowBatteryThreshold = "lowBatteryThreshold"
+    static let diagramURLTemplate = "diagramURLTemplate"
+  }
+
+  private func bool(_ key: String, default value: Bool) -> Bool {
+    guard defaults.object(forKey: key) != nil else { return value }
+    return defaults.bool(forKey: key)
+  }
+
+  /// Show held modifiers (from the zmk-host-status module) in the menu bar.
+  /// Off by default: mostly a home row mod debugging aid.
+  var showModifiers: Bool {
+    get { bool(Keys.showModifiers, default: false) }
+    set { defaults.set(newValue, forKey: Keys.showModifiers) }
+  }
+
+  /// Show a Caps Lock symbol in the menu bar while Caps Lock is on. Read from
+  /// macOS, so it works for every keyboard. Defaults to true.
+  var showCapsLock: Bool {
+    get { bool(Keys.showCapsLock, default: true) }
+    set { defaults.set(newValue, forKey: Keys.showCapsLock) }
+  }
+
+  /// Post a notification when a keyboard half drops to the threshold.
+  /// Defaults to true.
+  var lowBatteryAlerts: Bool {
+    get { bool(Keys.lowBatteryAlerts, default: true) }
+    set { defaults.set(newValue, forKey: Keys.lowBatteryAlerts) }
+  }
+
+  /// Battery percentage at or below which an alert fires. Defaults to 15.
+  var lowBatteryThreshold: Int {
+    get {
+      guard defaults.object(forKey: Keys.lowBatteryThreshold) != nil else { return 15 }
+      return min(max(defaults.integer(forKey: Keys.lowBatteryThreshold), 5), 50)
+    }
+    set { defaults.set(min(max(newValue, 5), 50), forKey: Keys.lowBatteryThreshold) }
+  }
+
+  /// URL template for per-layer keymap diagrams, with `{layer}` replaced by
+  /// the active layer's slug. Empty disables the cheat sheet.
+  var diagramURLTemplate: String {
+    get { defaults.string(forKey: Keys.diagramURLTemplate) ?? "" }
+    set { defaults.set(newValue, forKey: Keys.diagramURLTemplate) }
   }
 
   /// Whether the active layer (from the zmk-host-status firmware module) is

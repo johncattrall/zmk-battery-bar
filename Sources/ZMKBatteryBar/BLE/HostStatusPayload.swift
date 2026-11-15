@@ -10,6 +10,18 @@ struct HostStatus: Equatable {
   var lockedLayers: UInt32
   var peripheralsConnected: Int
   var peripheralsExpected: Int
+  /// v2 fields, nil when the firmware sends a v1 payload.
+  var extras: Extras? = nil
+
+  struct Extras: Equatable {
+    /// Held explicit modifiers, HID bit order (LCtrl, LShift, LAlt, LGui,
+    /// RCtrl, RShift, RAlt, RGui).
+    var modifiers: UInt8
+    /// True when the keyboard's output is USB rather than Bluetooth.
+    var usbOutput: Bool
+    var bleProfileConnected: Bool
+    var bleProfile: Int
+  }
 
   /// True for non-split keyboards and when every expected half is linked.
   var splitLinkUp: Bool {
@@ -22,6 +34,7 @@ enum HostStatusPayload {
   /// Status payload v1 is 12 bytes. Later versions only append fields, so a
   /// longer payload with a higher version byte is still readable.
   static let minimumStatusLength = 12
+  static let v2StatusLength = 15
 
   static func parseStatus(from data: Data?) -> HostStatus? {
     guard let data, data.count >= minimumStatusLength else { return nil }
@@ -33,12 +46,32 @@ enum HostStatusPayload {
         | UInt32(bytes[offset + 2]) << 16
         | UInt32(bytes[offset + 3]) << 24
     }
-    return HostStatus(
+    var status = HostStatus(
       activeLayers: u32(at: 2),
       lockedLayers: u32(at: 6),
       peripheralsConnected: Int(bytes[10]),
       peripheralsExpected: Int(bytes[11])
     )
+    if bytes[0] >= 2, bytes.count >= v2StatusLength {
+      status.extras = HostStatus.Extras(
+        modifiers: bytes[12],
+        usbOutput: bytes[13] & 0x01 != 0,
+        bleProfileConnected: bytes[13] & 0x02 != 0,
+        bleProfile: Int(bytes[14])
+      )
+    }
+    return status
+  }
+
+  /// macOS-style glyphs for held modifiers, left and right combined, in the
+  /// standard macOS order: Control, Option, Shift, Command.
+  static func modifierGlyphs(_ mods: UInt8) -> String {
+    let ctrl = mods & 0b0001_0001 != 0
+    let shift = mods & 0b0010_0010 != 0
+    let alt = mods & 0b0100_0100 != 0
+    let gui = mods & 0b1000_1000 != 0
+    return (ctrl ? "\u{2303}" : "") + (alt ? "\u{2325}" : "")
+      + (shift ? "\u{21E7}" : "") + (gui ? "\u{2318}" : "")
   }
 
   /// Layer names in keymap index order, newline-separated by the firmware.

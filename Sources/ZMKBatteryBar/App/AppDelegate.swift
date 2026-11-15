@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UserNotifications
 import os
 
 @MainActor
@@ -19,6 +20,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var lastRenderedLayerInfo: StatusBarLayerInfo?
   private var lastRenderedScale: CGFloat = 0
   private var renderTimer: Timer?
+  /// Fast tick for Caps Lock, which macOS does not push to us without
+  /// Input Monitoring. Rendering still happens only on an actual change.
+  private var indicatorTimer: Timer?
+  private let cheatSheet = CheatSheetController()
+  /// Per-half low-battery alert state, keyed by half ("central",
+  /// "peripheral-0", ...). True means the alert is armed.
+  private var lowBatteryArmed: [String: Bool] = [:]
   private var panelLayoutScheduled = false
 
   func applicationDidFinishLaunching(_ notification: Notification) {
@@ -28,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       // implicitly unwrapped status item before it exists.
       guard let self, self.statusItem != nil else { return }
       self.updateButtonImageIfNeeded()
+      self.refreshCheatSheet()
     }
 
     statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -42,7 +51,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       // Timer fires on the main run loop, so this is always on the main actor.
       MainActor.assumeIsolated {
         self?.updateButtonImageIfNeeded()
+        self?.checkLowBattery()
       }
+    }
+    indicatorTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+      MainActor.assumeIsolated {
+        self?.updateButtonImageIfNeeded()
+      }
+    }
+    if appSettings.lowBatteryAlerts {
+      requestNotificationPermission()
     }
 
     let menuContent = MenuContentView(
@@ -54,6 +72,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       onLabelChange: { [weak self] in
         MainActor.assumeIsolated {
           self?.updateButtonImage()
+          self?.refreshCheatSheet()
+        }
+      },
+      onToggleCheatSheet: { [weak self] in
+        MainActor.assumeIsolated {
+          self?.cheatSheet.toggle()
+          self?.refreshCheatSheet()
+        }
+      },
+      onLowBatteryAlertsChange: { [weak self] in
+        MainActor.assumeIsolated {
+          if self?.appSettings.lowBatteryAlerts == true {
+            self?.requestNotificationPermission()
+          }
         }
       },
       onAutoSwitchChange: { [weak self] in
@@ -122,6 +154,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationWillTerminate(_ notification: Notification) {
     renderTimer?.invalidate()
     renderTimer = nil
+    indicatorTimer?.invalidate()
+    indicatorTimer = nil
     activeKeyboardMonitor.stop()
   }
 
@@ -179,19 +213,93 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       ?? 2.0
   }
 
-  /// Nil (batteries only) for keyboards without the zmk-host-status module.
-  @MainActor private func currentLayerInfo() -> StatusBarLayerInfo? {
+  /// The layer the menu bar and cheat sheet follow (hidden layers skipped).
+  @MainActor private func currentLayerDisplay() -> LayerDisplayResolver.Display? {
     guard hostStatusState.isAvailable, let status = hostStatusState.status else { return nil }
-    let layer = appSettings.showLayerIndicator
-      ? LayerDisplayResolver.resolve(
-          names: hostStatusState.layerNames,
-          activeLayers: status.activeLayers,
-          lockedLayers: status.lockedLayers,
-          hidden: Set(appSettings.hiddenLayerNames)
-        )
-      : nil
-    let info = StatusBarLayerInfo(layer: layer, splitLinkDown: !status.splitLinkUp)
-    return (info.layer == nil && !info.splitLinkDown) ? nil : info
+    return LayerDisplayResolver.resolve(
+      names: hostStatusState.layerNames,
+      activeLayers: status.activeLayers,
+      lockedLayers: status.lockedLayers,
+      hidden: Set(appSettings.hiddenLayerNames)
+    )
+  }
+
+  /// Nil when there is nothing to show besides the batteries.
+  @MainActor private func currentLayerInfo() -> StatusBarLayerInfo? {
+    var info = StatusBarLayerInfo()
+    info.capsLock = appSettings.showCapsLock && NSEvent.modifierFlags.contains(.capsLock)
+    if hostStatusState.isAvailable, let status = hostStatusState.status {
+      info.layer = appSettings.showLayerIndicator ? currentLayerDisplay() : nil
+      info.splitLinkDown = !status.splitLinkUp
+      if let extras = status.extras {
+        info.modifiers = appSettings.showModifiers
+          ? HostStatusPayload.modifierGlyphs(extras.modifiers) : ""
+        info.usbOutput = extras.usbOutput
+      }
+    }
+    return info.isEmpty ? nil : info
+  }
+
+  // MARK: - Cheat sheet
+
+  @MainActor private func refreshCheatSheet() {
+    cheatSheet.update(
+      layerName: currentLayerDisplay()?.current,
+      template: appSettings.diagramURLTemplate,
+      buildID: hostStatusState.buildID
+    )
+  }
+
+  // MARK: - Low battery alerts
+
+  private func requestNotificationPermission() {
+    Task {
+      _ = try? await UNUserNotificationCenter.current()
+        .requestAuthorization(options: [.alert, .sound])
+    }
+  }
+
+  @MainActor private func checkLowBattery() {
+    guard appSettings.lowBatteryAlerts, !batteryState.isStale() else { return }
+    let keyboard = appSettings.selectedKeyboard
+    var halves: [(key: String, label: String, level: Int?)] = [
+      ("central", keyboard?.centralLabelShort ?? "C", batteryState.centralLevel),
+    ]
+    for peripheral in batteryState.peripherals {
+      let label = peripheral.index == 0
+        ? (keyboard?.peripheralLabelShort ?? "P")
+        : "P\(peripheral.index + 1)"
+      halves.append(("peripheral-\(peripheral.index)", label, peripheral.level))
+    }
+    let threshold = appSettings.lowBatteryThreshold
+    for half in halves {
+      let result = LowBatteryAlertPolicy.evaluate(
+        level: half.level, threshold: threshold, armed: lowBatteryArmed[half.key] ?? true)
+      lowBatteryArmed[half.key] = result.armed
+      if result.shouldAlert, let level = half.level {
+        postLowBatteryAlert(half: Self.halfName(forLabel: half.label), level: level,
+                            identifier: half.key)
+      }
+    }
+  }
+
+  private static func halfName(forLabel label: String) -> String {
+    switch label {
+    case "L": return "Left half"
+    case "R": return "Right half"
+    case "C": return "Central half"
+    case "P": return "Peripheral half"
+    default: return "Half \(label)"
+    }
+  }
+
+  private func postLowBatteryAlert(half: String, level: Int, identifier: String) {
+    let content = UNMutableNotificationContent()
+    content.title = "Keyboard battery low"
+    content.body = "\(half) is at \(level)%."
+    let request = UNNotificationRequest(
+      identifier: "low-battery-\(identifier)", content: content, trigger: nil)
+    UNUserNotificationCenter.current().add(request)
   }
 
   @MainActor private func currentStatusBarRows() -> [StatusBarRow] {

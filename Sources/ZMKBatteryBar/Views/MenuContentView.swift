@@ -8,6 +8,8 @@ struct MenuContentView: View {
   let hostStatusState: HostStatusState
   let navigation: PanelNavigation
   var onLabelChange: () -> Void = {}
+  var onToggleCheatSheet: () -> Void = {}
+  var onLowBatteryAlertsChange: () -> Void = {}
   var onAutoSwitchChange: () -> Void = {}
 
   @State private var hideBatteryIcon = false
@@ -18,6 +20,11 @@ struct MenuContentView: View {
   @State private var autoSwitchKeyboard = false
   @State private var showLayerIndicator = true
   @State private var hiddenLayersText = ""
+  @State private var showModifiers = false
+  @State private var showCapsLock = true
+  @State private var lowBatteryAlerts = true
+  @State private var lowBatteryThreshold = 15
+  @State private var diagramTemplateText = ""
   @State private var hasInputMonitoringAccess = ActiveKeyboardMonitor.hasAccess
   @State private var now = Date()
   @State private var labelStyleTick = 0
@@ -113,6 +120,45 @@ struct MenuContentView: View {
             }
         }
         .help("Comma-separated layer names never shown in the menu bar. Press Return to apply.")
+
+        Toggle("Show Held Modifiers", isOn: $showModifiers)
+          .onChange(of: showModifiers) { _, newValue in
+            appSettings.showModifiers = newValue
+            onLabelChange()
+          }
+
+        HStack {
+          TextField("Diagram URL with {layer}", text: $diagramTemplateText)
+            .textFieldStyle(.roundedBorder)
+            .onSubmit {
+              appSettings.diagramURLTemplate = diagramTemplateText
+              onLabelChange()
+            }
+          Button("Cheat Sheet") {
+            appSettings.diagramURLTemplate = diagramTemplateText
+            onToggleCheatSheet()
+          }
+        }
+        .help("URL of your keymap-drawer SVGs, with {layer} where the layer name goes, e.g. https://raw.githubusercontent.com/you/zmk-config/main/keymap-drawer/board_{layer}.svg")
+      }
+
+      Toggle("Show Caps Lock", isOn: $showCapsLock)
+        .onChange(of: showCapsLock) { _, newValue in
+          appSettings.showCapsLock = newValue
+          onLabelChange()
+        }
+
+      Toggle("Low Battery Alerts", isOn: $lowBatteryAlerts)
+        .onChange(of: lowBatteryAlerts) { _, newValue in
+          guard newValue != appSettings.lowBatteryAlerts else { return }
+          appSettings.lowBatteryAlerts = newValue
+          onLowBatteryAlertsChange()
+        }
+      if lowBatteryAlerts {
+        Stepper("Alert at \(lowBatteryThreshold)%", value: $lowBatteryThreshold, in: 5...50, step: 5)
+          .onChange(of: lowBatteryThreshold) { _, newValue in
+            appSettings.lowBatteryThreshold = newValue
+          }
       }
 
       Toggle("Auto-Switch to Active Keyboard", isOn: $autoSwitchKeyboard)
@@ -186,6 +232,11 @@ struct MenuContentView: View {
       hasInputMonitoringAccess = ActiveKeyboardMonitor.hasAccess
       showLayerIndicator = appSettings.showLayerIndicator
       hiddenLayersText = appSettings.hiddenLayerNames.joined(separator: ", ")
+      showModifiers = appSettings.showModifiers
+      showCapsLock = appSettings.showCapsLock
+      lowBatteryAlerts = appSettings.lowBatteryAlerts
+      lowBatteryThreshold = appSettings.lowBatteryThreshold
+      diagramTemplateText = appSettings.diagramURLTemplate
     }
   }
 
@@ -231,6 +282,16 @@ struct MenuContentView: View {
                 systemImage: "exclamationmark.triangle.fill")
             .foregroundStyle(.orange)
         }
+      }
+    }
+    if let extras = status.extras {
+      HStack {
+        Text("Output")
+        Spacer()
+        Text(extras.usbOutput
+          ? "USB"
+          : "Bluetooth profile \(extras.bleProfile)\(extras.bleProfileConnected ? "" : " (not connected)")")
+          .foregroundStyle(.secondary)
       }
     }
     if let build = hostStatusState.buildID {
