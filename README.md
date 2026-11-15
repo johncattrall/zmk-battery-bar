@@ -93,17 +93,7 @@ keyboard offers, and the new one stays invisible until you re-pair.
 
 ### 2. App
 
-Install with Homebrew:
-
-```sh
-brew install johncattrall/tap/zmk-statbar
-```
-
-Or download the zip from [Releases](https://github.com/johncattrall/zmk-statbar/releases)
-and move **ZMK Statbar** to Applications. Both are signed and notarized by
-Apple, so macOS opens them without warnings.
-
-To build from source instead you need Xcode or the Xcode command line tools:
+Build from source. You need Xcode or the Xcode command line tools.
 
 ```sh
 git clone https://github.com/johncattrall/zmk-statbar
@@ -111,6 +101,8 @@ cd zmk-statbar
 ./scripts/build-app.sh
 cp -r "build/ZMK Statbar.app" /Applications/
 ```
+
+Signed releases and a Homebrew cask are planned.
 
 ### 3. First launch
 
@@ -216,8 +208,8 @@ tests under `Tests/`. `AGENTS.md` describes the conventions in more detail.
 
 Pushing a version tag runs `.github/workflows/release.yml`, which builds, signs
 and notarizes the app, attaches it to a GitHub Release and updates the cask in
-[johncattrall/homebrew-tap](https://github.com/johncattrall/homebrew-tap). It
-needs these repository secrets:
+`johncattrall/homebrew-tap`. This is not set up yet; it needs these repository
+secrets:
 
 | Secret | Contents |
 |---|---|
